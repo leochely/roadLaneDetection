@@ -30,13 +30,14 @@ while (True):
     if ret == True:
 
         # Find Lane Lines
-        # frame = functions.findLaneLines(frame)
+        lane_pts = functions.findLaneLines(frame)
+        frame_with_overlay = functions.overlay(frame, lane_pts)
 
         # Write original frame with the highlighted lines to output
-        output.write(frame)
+        output.write(frame_with_overlay)
 
         # Display resulting frame (for visualization)
-        cv2.imshow('frame', frame)
+        cv2.imshow('frame', frame_with_overlay)
 
         # Press Q on keyboard to stop playing
         if cv2.waitKey(1) & 0xFF == ord('q'):
