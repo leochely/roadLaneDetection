@@ -29,20 +29,20 @@ while (True):
     # If there is a frame
     if ret == True:
 
-        # Convert to grayscale
-        # gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
+        # Find Lane Lines
+        # frame = functions.findLaneLines(frame)
 
         # Write original frame with the highlighted lines to output
         output.write(frame)
 
-        # Display resulting frame (for visulaization)
+        # Display resulting frame (for visualization)
         cv2.imshow('frame', frame)
 
         # Press Q on keyboard to stop playing
         if cv2.waitKey(1) & 0xFF == ord('q'):
             break
 
-        # If NO frame
+    # If NO frame
     else:
         # Break the loop
         break
