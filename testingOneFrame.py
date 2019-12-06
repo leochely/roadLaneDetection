@@ -46,7 +46,7 @@ while (True):
             lane_pts = functions.findLaneLines(frame)
             img_with_overlay = functions.overlay(frame, lane_pts)
 
-            # Display resulting img
+            # Display resulting image
             functions.ShowImage('Returned img', img_with_overlay)
 
     # If NO frame
