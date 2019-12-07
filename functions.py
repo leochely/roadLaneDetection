@@ -6,27 +6,34 @@ def findLaneLines(frame):
     # In the order of top left, top right, bottom right, bottom left
     src_pts = np.float32(
         [
-            [520.0, 560.0],
-            [740.0, 560.0],
-            [1000.0, 700.0],
-            [270.0, 700.0],
+            [590.0, 530.0],
+            [682.0, 530.0],
+            [1100.0, 660.0],
+            [124.0, 660.0],
         ]
     )
 
     # Warp lane in front of car to bird eye view
     warped_img, M, Minv = warp_image(frame, src_pts)
 
-    # Display Warped image
-    ShowImage('warped_img', warped_img)
-
     # Threshold warped image
+    warped_img_gray = cv2.cvtColor(warped_img, cv2.COLOR_RGB2GRAY)
+    canny_img = cv2.Canny(warped_img_gray, 100, 200)
 
+    # Hough Lines
+    minLineLength = 1100
+    maxLineGap = 10
+    lines = cv2.HoughLines(canny_img,1,np.pi/180,100)
+    for x1,y1,x2,y2 in lines[0]:
+        cv2.line(warped_img_gray,(x1,y1),(x2,y2),(0,255,0),2)
 
+    # Display Warped image
+    ShowImage('warped_img', canny_img)
 
     # FIXME: Just for now so we have a return value
     lane_pts = src_pts
 
-    return lane_pts
+    return lane_pts, M
 
 def warp_image(img, src_pts):
     height, width = img.shape[0:2]
@@ -61,6 +68,12 @@ def overlay(img, pts):
 
     return img_with_overlay
 
+def region_of_interest(img, vertices):
+    mask = np.zeros_like(img)
+    match_mask_color = (255,) 
+    cv2.fillPoly(mask, vertices, match_mask_color)
+    masked_image = cv2.bitwise_and(img, mask)
+    return masked_image
 
 def ShowImage(title, image):
 
