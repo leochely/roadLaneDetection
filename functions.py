@@ -1,4 +1,5 @@
 import numpy as np
+import math
 import cv2
 
 def findLaneLines(frame):
@@ -19,7 +20,7 @@ def findLaneLines(frame):
     # Warp lane in front of car to bird eye view
     warped_img, M, Minv = warp_image(frame, src_pts)
     img = warped_img
-    ShowImage("warped", img)
+    #ShowImage("warped", img)
     usingUnwarped = False
 
     # Threshold warped image (grayscale, and binary)
@@ -28,7 +29,7 @@ def findLaneLines(frame):
 
     # Canny Edge Detection
     img = cv2.Canny(img, 100, 200)
-    ShowImage('canny', img)
+    #ShowImage('canny', img)
 
     # Apply Gaussian Blur
     img = cv2.GaussianBlur(img, (5, 5), 0)
@@ -51,21 +52,87 @@ def findLaneLines(frame):
     maxLineGap = 10
     #lines = cv2.HoughLines(masked_img, 1, np.pi/180, 100)
 
-    #                          edges   rho   theta   thresh  min length, max gap:
-    lines = cv2.HoughLinesP(img, 1, np.pi/180, 10,      100,         10)
+    #                          edges   rho   theta   thresh         min length, max gap:
+    lines = cv2.HoughLinesP(img, 1, np.pi/180, 10, np.array([]),      100,         200)
 
     # Draw Hough Lines
     for line in lines:
         coords = line[0]
         cv2.line(img, (coords[0], coords[1]), (coords[2], coords[3]), [255, 255, 255], 3)
 
+
+    img = findSingleLines(lines, warped_img)
+
     # Display Warped image
-    ShowImage('Frame with lines', img)
+    #ShowImage('Frame with lines', img)
 
     # FIXME: Just for now so we have a return value
     lane_pts = roi_pts
 
-    return lane_pts
+    return img
+
+
+def findSingleLines(Hough_lines, img):
+
+    lines = Hough_lines
+
+    left_line_x = []
+    left_line_y = []
+    right_line_x = []
+    right_line_y = []
+
+    for line in lines:
+        for x1, y1, x2, y2 in line:
+            # Check for infinite demoninator
+            if (x2 - x1) == 0:
+                continue
+            # Calculate Slope
+            slope = (y2 - y1) / (x2 - x1)
+
+            # Only keep extreeme values
+            if math.fabs(slope) < 1:
+                continue
+
+            # Left line for negative slope
+            if slope <= 0:
+                left_line_x.extend([x1, x2])
+                left_line_y.extend([y1, y2])
+            # Right line for positive slope
+            else:
+                right_line_x.extend([x1, x2])
+                right_line_y.extend([y1, y2])
+
+
+    min_y = 0
+    max_y = img.shape[0]
+
+    poly_left = np.poly1d(np.polyfit(
+        left_line_y,
+        left_line_x,
+        deg=1
+    ))
+    left_x_start = int(poly_left(max_y))
+    left_x_end = int(poly_left(min_y))
+
+    poly_right = np.poly1d(np.polyfit(
+        right_line_y,
+        right_line_x,
+        deg=1
+    ))
+
+    right_x_start = int(poly_right(max_y))
+    right_x_end = int(poly_right(min_y))
+
+    print("Ls: ", left_x_start)
+    print("Le: ", left_x_end)
+    print("Rs: ", right_x_start)
+    print("Re: ", right_x_end)
+
+    cv2.line(img, (left_x_start, max_y), (left_x_end, min_y), (0, 255, 0), 5)
+    cv2.line(img, (right_x_start, max_y), (right_x_end, min_y), (0, 0, 255), 5)
+
+    return img
+
 
 def warp_image(img, src_pts):
     height, width = img.shape[0:2]
