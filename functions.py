@@ -54,26 +54,27 @@ def findLaneLines(frame):
 
     # Hough Lines         edges, rho   theta   thresh              min length, max gap
     #lines = cv2.HoughLinesP(img, 1, np.pi/180, 10, np.array([]),      100,         200)
-    lines = cv2.HoughLinesP(img, 1, np.pi / 180, 10, np.array([]), 10, 5)
+    lines = cv2.HoughLinesP(img, 1, np.pi / 180, 100, np.array([]), 100, 250)
 
     # Draw Hough Lines
     for line in lines:
         coords = line[0]
-        cv2.line(img, (coords[0], coords[1]), (coords[2], coords[3]), [255, 255, 255], 3)
+        cv2.line(img, (coords[0], coords[1]), (coords[2], coords[3]), [255, 255, 255], 1)
+    #ShowImage("Hough Lines", img)
 
     # Convert Hough lines for a single Left and Right Line
-    left_line, right_line = houghLinestoLaneLines(img, lines)
+    left_line, right_line, min_x = houghLinestoLaneLines(img, lines)
 
     # For Testing, Overlay on Warped Img
     overlayed_img = overlay(img, left_line)
-    overlayed_img = overlay(overlayed_img, right_line)
-    ShowImage("Overlayed on Warped", overlayed_img)
+    overlayed_img = overlay(img, right_line)
+    #ShowImage("Overlayed on Warped", overlayed_img)
 
     # Unwarp (inverse)
 
 
 
-    return left_line, right_line
+    return  overlayed_img, left_line, right_line
 
 
 def houghLinestoLaneLines(img, lines):
@@ -81,17 +82,40 @@ def houghLinestoLaneLines(img, lines):
     left_weights = []  # (length,)
     right_lines = []  # (slope, intercept)
     right_weights = []  # (length,)
+    left_line_x = []
+    left_line_y = []
+    min_x = []
 
     for line in lines:
         for x1, y1, x2, y2 in line:
-            if x2 == x1:
-                continue  # ignore a vertical line
+            # Check for infinite demoninator (Veticle line)
+            if (x2 - x1) == 0:
+                continue
+
+            # Calculate Slope
             slope = (y2 - y1) / (x2 - x1)
+
+            # Only keep extreeme values
+            if math.fabs(slope) < 1:
+                continue
+
             intercept = y1 - slope * x1
             length = np.sqrt((y2 - y1) ** 2 + (x2 - x1) ** 2)
+
             if slope < 0:  # y is reversed in image
                 left_lines.append((slope, intercept))
                 left_weights.append((length))
+
+                if min_x == []:
+                    min_x = x1
+                else:
+                    if x1 < min_x:
+                        min_x = x1
+                    if x2 < min_x:
+                        min_x = x2
+
+                #left_line_x.extend([x1, x2])
+                #left_line_y.extend([y1, y2])
             else:
                 right_lines.append((slope, intercept))
                 right_weights.append((length))
@@ -99,13 +123,44 @@ def houghLinestoLaneLines(img, lines):
     # add more weight to longer lines
     left_line = np.dot(left_weights, left_lines) / np.sum(left_weights) if len(left_weights) > 0 else None
     right_line = np.dot(right_weights, right_lines) / np.sum(right_weights) if len(right_weights) > 0 else None
+    '''
+    y1 = img.shape[0]
+    y2 = 0
 
-    return left_line, right_line
+    for line in left_lines:
+        for slope, intercept in line:
+            left_line_x.extend([int((y1 - intercept) / slope)])
+            left_line_x.extend([int((y2 - intercept) / slope)])
+    
+    
+    img_with_overlay = cv2.line(img, (x1, y1), (x2, y2), (255, 255, 255), 5)
+    
+    
+
+    print("left: ", left_line)
+    print("right: ", right_line)
+
+    
+    y1 = img.shape[0]
+    y2 = 0
+
+    poly_left = np.poly1d(np.polyfit(
+        left_line_y,
+        left_line_x,
+        deg=2
+    ))
+
+    x1 = int(poly_left(y1))
+    x2 = int(poly_left(y2))
+
+    cv2.line(img, (x1, y1), (x2, y2), (255, 255, 255), 5)
+    ShowImage("here", img)
+    '''
+
+    return left_line, right_line, min_x
 
 
-def findSingleLines(Hough_lines, img):
-
-    lines = Hough_lines
+def findSingleLines(img, lines):
 
     left_line_x = []
     left_line_y = []
@@ -159,8 +214,8 @@ def findSingleLines(Hough_lines, img):
     print("Rs: ", right_x_start)
     print("Re: ", right_x_end)
 
-    cv2.line(img, (left_x_start, max_y), (left_x_end, min_y), (0, 255, 0), 5)
-    cv2.line(img, (right_x_start, max_y), (right_x_end, min_y), (0, 0, 255), 5)
+    cv2.line(img, (left_x_start, max_y), (left_x_end, min_y), (255, 255, 255), 5)
+    cv2.line(img, (right_x_start, max_y), (right_x_end, min_y), (255, 255, 255), 5)
 
     return img
 
@@ -185,13 +240,13 @@ def warp_image(img, src_pts):
 
     return warped_img, M, Minv
 
-def overlay(img, line):
+def overlay(img, line, min_x = None):
+
+    if line is None:
+        return img
 
     y1 = img.shape[0]
     y2 = 0
-
-    if line is None:
-        return None
 
     slope, intercept = line
 
@@ -201,7 +256,16 @@ def overlay(img, line):
     y1 = int(y1)
     y2 = int(y2)
 
-    img_with_overlay = cv2.line(img, (x1, y1), (x2, y2), (255, 255, 255), 5)
+    if min_x == None:
+
+        img_with_overlay = cv2.line(img, (x1, y1), (x2, y2), (255, 255, 255), 5)
+
+    else:
+        offset = x1 - min_x
+        x1 = x1 - offset
+        x2 = x2 - offset
+
+        img_with_overlay = cv2.line(img, (x1, y1), (x2, y2), (255, 255, 255), 5)
 
     return img_with_overlay
 
