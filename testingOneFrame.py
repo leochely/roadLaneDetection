@@ -32,6 +32,8 @@ desired_frame = 10
 if desired_frame > amount_of_frames:
     desired_frame = amount_of_frames
 
+overlayROI = False
+
 while (True):
     count = count + 1
 
@@ -42,12 +44,24 @@ while (True):
 
         if count == desired_frame:
 
-            # Find lane
-            img = functions.findLaneLines(frame)
-            #img_with_overlay = functions.overlay(frame, lane_pts)
+            if overlayROI:  # Show ROI Overlay (cannot do this AND find lanes in same run)
+                # In the order of top left, top right, bottom right, bottom left
+                roi_pts = np.array([[590, 530], [682, 530], [1100, 660], [124, 660]], np.int32)
 
-            # Display resulting image
-            functions.ShowImage('Returned img', img)
+                # Show region of interest
+                roi = functions.overlayROI(frame, roi_pts)
+                functions.ShowImage("RegionOfInterest", roi)
+
+            else: # Find Lanes
+                # Find lane lines
+                left_line, right_line = functions.findLaneLines(frame)
+
+                # Overlay lanes onto frame
+                img_with_overlay = functions.overlay(frame, left_line)
+                img_with_overlay = functions.overlay(img_with_overlay, right_line)
+
+                # Display resulting image
+                functions.ShowImage('Returned img', img_with_overlay)
 
     # If NO frame
     else:
