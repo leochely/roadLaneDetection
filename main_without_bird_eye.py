@@ -39,7 +39,6 @@ while (True):
 
         # Canny Edge Detection
         cannyed_image = cv2.Canny(gray, 100, 200)
-        print(cannyed_image.shape)
         cropped_image = functions.region_of_interest(
             cannyed_image,
             np.array([region_of_interest_vertices], np.int32))
