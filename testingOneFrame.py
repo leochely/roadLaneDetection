@@ -25,7 +25,7 @@ count = 0
 
 # ---------------------------- RIGHT HERE -------------------------------------------------
 # Desired Frame
-desired_frame = 50
+desired_frame = 10
 #------------------------------------------------------------------------------------------
 
 # Check desired frame against total number of frames
@@ -43,11 +43,11 @@ while (True):
         if count == desired_frame:
 
             # Find lane
-            lane_pts = functions.findLaneLines(frame)
-            img_with_overlay = functions.overlay(frame, lane_pts)
+            img = functions.findLaneLines(frame)
+            #img_with_overlay = functions.overlay(frame, lane_pts)
 
             # Display resulting image
-            functions.ShowImage('Returned img', img_with_overlay)
+            functions.ShowImage('Returned img', img)
 
     # If NO frame
     else:
