@@ -25,7 +25,7 @@ count = 0
 
 # ---------------------------- RIGHT HERE -------------------------------------------------
 # Desired Frame
-desired_frame = 10
+desired_frame = 100
 #------------------------------------------------------------------------------------------
 
 # Check desired frame against total number of frames
