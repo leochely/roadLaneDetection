@@ -134,8 +134,15 @@ def houghLinestoLaneLines(img, lines):
                 continue
 
     # Give longer lines a heavier weight
-    left_line = np.dot(left_weights, left_lines) / np.sum(left_weights) if len(left_weights) > 0 else None
-    right_line = np.dot(right_weights, right_lines) / np.sum(right_weights) if len(right_weights) > 0 else None
+    if len(left_weights) > 0:
+        left_line = np.dot(left_weights, left_lines) / np.sum(left_weights)
+    else:
+        left_line = None
+
+    if len(right_weights) > 0:
+        right_line = np.dot(right_weights, right_lines) / np.sum(right_weights)
+    else:
+        right_line = None
 
     return left_line, right_line
 
