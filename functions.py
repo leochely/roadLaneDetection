@@ -50,7 +50,7 @@ def findLaneLines(frame):
     # Join mask and img
     masked_img = cv2.bitwise_and(img, mask)
     #ShowImage('Masked Image (ROI)', masked_img)
-    img = masked_img
+    img = masked_img.copy()
 
     # Hough Lines         edges, rho   theta   thresh              min length, max gap
     #lines = cv2.HoughLinesP(img, 1, np.pi/180, 10, np.array([]),      100,         200)
@@ -63,32 +63,55 @@ def findLaneLines(frame):
     #ShowImage("Hough Lines", img)
 
     # Convert Hough lines for a single Left and Right Line
-    left_line, right_line, min_x = houghLinestoLaneLines(img, lines)
+    left_line, right_line = houghLinestoLaneLines(img, lines)
 
-    # For Testing, Overlay on Warped Img
-    overlayed_img = overlay(img, left_line)
-    overlayed_img = overlay(img, right_line)
+    # Overlay on Warped Img
+    overlayed_img = overlay(warped_img, left_line)
+    overlayed_img = overlay(warped_img, right_line)
     #ShowImage("Overlayed on Warped", overlayed_img)
 
-    # Unwarp (inverse)
+    # Unwarp Birds-eye View (M_inverse)
+    unWarped_img = cv2.warpPerspective(warped_img, Minv, (frame.shape[1], frame.shape[0]))
+
+    # Create Region of interest for masking
+    unWarped_roi = np.array([src_pts[0], src_pts[1], src_pts[2], src_pts[3]], np.int32)
+
+    # Combine frame and unWarped image with a mask around the ROI
+    combinded_img = combineImages(frame, unWarped_img, unWarped_roi)
+    #ShowImage("Comb", combinded_img)
 
 
+    return combinded_img
 
-    return  overlayed_img, left_line, right_line
 
+def combineImages(img1, img2, roi):
+
+    mask = np.zeros_like(img1)
+    # Fill mask
+    cv2.fillPoly(mask, [roi], (255, 255, 255))
+
+    mask = np.uint8(mask)
+    mask_inv = cv2.bitwise_not(mask)
+
+    temp = cv2.bitwise_and(img2, mask)
+    temp2 = cv2.bitwise_and(img1, mask_inv)
+
+    combined_img = cv2.add(temp, temp2)
+
+    return combined_img
 
 def houghLinestoLaneLines(img, lines):
     left_lines = []  # (slope, intercept)
     left_weights = []  # (length,)
     right_lines = []  # (slope, intercept)
     right_weights = []  # (length,)
-    left_line_x = []
-    left_line_y = []
-    min_x = []
+    #left_line_x = []
+    #left_line_y = []
+    #min_x = []
 
     for line in lines:
         for x1, y1, x2, y2 in line:
-            # Check for infinite demoninator (Veticle line)
+            # Check for infinite demoninator (Verticle line)
             if (x2 - x1) == 0:
                 continue
 
@@ -106,121 +129,22 @@ def houghLinestoLaneLines(img, lines):
                 left_lines.append((slope, intercept))
                 left_weights.append((length))
 
-                if min_x == []:
-                    min_x = x1
-                else:
-                    if x1 < min_x:
-                        min_x = x1
-                    if x2 < min_x:
-                        min_x = x2
-
                 #left_line_x.extend([x1, x2])
                 #left_line_y.extend([y1, y2])
+
             else:
                 right_lines.append((slope, intercept))
                 right_weights.append((length))
 
-    # add more weight to longer lines
+    # Give longer lines a heavier weight
     left_line = np.dot(left_weights, left_lines) / np.sum(left_weights) if len(left_weights) > 0 else None
     right_line = np.dot(right_weights, right_lines) / np.sum(right_weights) if len(right_weights) > 0 else None
-    '''
-    y1 = img.shape[0]
-    y2 = 0
 
-    for line in left_lines:
-        for slope, intercept in line:
-            left_line_x.extend([int((y1 - intercept) / slope)])
-            left_line_x.extend([int((y2 - intercept) / slope)])
-    
-    
-    img_with_overlay = cv2.line(img, (x1, y1), (x2, y2), (255, 255, 255), 5)
-    
-    
-
-    print("left: ", left_line)
-    print("right: ", right_line)
-
-    
-    y1 = img.shape[0]
-    y2 = 0
-
-    poly_left = np.poly1d(np.polyfit(
-        left_line_y,
-        left_line_x,
-        deg=2
-    ))
-
-    x1 = int(poly_left(y1))
-    x2 = int(poly_left(y2))
-
-    cv2.line(img, (x1, y1), (x2, y2), (255, 255, 255), 5)
-    ShowImage("here", img)
-    '''
-
-    return left_line, right_line, min_x
-
-
-def findSingleLines(img, lines):
-
-    left_line_x = []
-    left_line_y = []
-    right_line_x = []
-    right_line_y = []
-
-    for line in lines:
-        for x1, y1, x2, y2 in line:
-            # Check for infinite demoninator
-            if (x2 - x1) == 0:
-                continue
-            # Calculate Slope
-            slope = (y2 - y1) / (x2 - x1)
-
-            # Only keep extreeme values
-            if math.fabs(slope) < 1:
-                continue
-
-            # Left line for negative slope
-            if slope <= 0:
-                left_line_x.extend([x1, x2])
-                left_line_y.extend([y1, y2])
-            # Right line for positive slope
-            else:
-                right_line_x.extend([x1, x2])
-                right_line_y.extend([y1, y2])
-
-
-    min_y = 0
-    max_y = img.shape[0]
-
-    poly_left = np.poly1d(np.polyfit(
-        left_line_y,
-        left_line_x,
-        deg=1
-    ))
-    left_x_start = int(poly_left(max_y))
-    left_x_end = int(poly_left(min_y))
-
-    poly_right = np.poly1d(np.polyfit(
-        right_line_y,
-        right_line_x,
-        deg=1
-    ))
-
-    right_x_start = int(poly_right(max_y))
-    right_x_end = int(poly_right(min_y))
-
-    print("Ls: ", left_x_start)
-    print("Le: ", left_x_end)
-    print("Rs: ", right_x_start)
-    print("Re: ", right_x_end)
-
-    cv2.line(img, (left_x_start, max_y), (left_x_end, min_y), (255, 255, 255), 5)
-    cv2.line(img, (right_x_start, max_y), (right_x_end, min_y), (255, 255, 255), 5)
-
-    return img
+    return left_line, right_line
 
 
 def warp_image(img, src_pts):
+    # Get image shape
     height, width = img.shape[0:2]
 
     # In the order of top left, top right, bottom right, bottom left
@@ -256,16 +180,7 @@ def overlay(img, line, min_x = None):
     y1 = int(y1)
     y2 = int(y2)
 
-    if min_x == None:
-
-        img_with_overlay = cv2.line(img, (x1, y1), (x2, y2), (255, 255, 255), 5)
-
-    else:
-        offset = x1 - min_x
-        x1 = x1 - offset
-        x2 = x2 - offset
-
-        img_with_overlay = cv2.line(img, (x1, y1), (x2, y2), (255, 255, 255), 5)
+    img_with_overlay = cv2.line(img, (x1, y1), (x2, y2), (0, 0, 255), 5)
 
     return img_with_overlay
 
