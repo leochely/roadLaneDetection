@@ -105,10 +105,8 @@ def houghLinestoLaneLines(img, lines):
     left_weights = []  # (length,)
     right_lines = []  # (slope, intercept)
     right_weights = []  # (length,)
-    #left_line_x = []
-    #left_line_y = []
-    #min_x = []
 
+    width, _ = img.shape
     for line in lines:
         for x1, y1, x2, y2 in line:
             # Check for infinite demoninator (Verticle line)
@@ -125,16 +123,16 @@ def houghLinestoLaneLines(img, lines):
             intercept = y1 - slope * x1
             length = np.sqrt((y2 - y1) ** 2 + (x2 - x1) ** 2)
 
-            if slope < 0:  # y is reversed in image
+            if slope < 0 and x1 < 3 * width / 4:  # y is reversed in image
                 left_lines.append((slope, intercept))
                 left_weights.append((length))
 
-                #left_line_x.extend([x1, x2])
-                #left_line_y.extend([y1, y2])
-
-            else:
+            elif slope > 0 and x1 > width / 4:
                 right_lines.append((slope, intercept))
                 right_weights.append((length))
+
+            else:
+                continue
 
     # Give longer lines a heavier weight
     left_line = np.dot(left_weights, left_lines) / np.sum(left_weights) if len(left_weights) > 0 else None
