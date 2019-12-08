@@ -25,7 +25,7 @@ count = 0
 
 # ---------------------------- RIGHT HERE -------------------------------------------------
 # Desired Frame
-desired_frame = 291
+desired_frame = 10
 #------------------------------------------------------------------------------------------
 
 # Check desired frame against total number of frames
@@ -54,14 +54,7 @@ while (True):
 
             else: # Find Lanes
                 # Find lane lines
-                left_line, right_line = functions.findLaneLines(frame)
-                functions.ShowImage("heer", frame)
-                print(left_line)
-                print(right_line)
-
-                # Overlay lanes onto frame
-                img_with_overlay = functions.overlay(frame, left_line)
-                img_with_overlay = functions.overlay(frame, right_line)
+                img_with_overlay = functions.findLaneLines(frame)
 
                 # Display resulting image
                 functions.ShowImage('Returned img', img_with_overlay)
