@@ -20,7 +20,7 @@ frame_height = int(cap.get(4))
 # Video output
 fourcc = cv2.VideoWriter_fourcc('M', 'J', 'P', 'G')
 output = cv2.VideoWriter(output_video_file_name, fourcc, 30, (frame_width, frame_height))
-i = 0
+
 # Processing video
 while (True):
     # Read current frame
@@ -28,19 +28,15 @@ while (True):
 
     # If there is a frame
     if ret == True:
-        i = i + 1
-        print("Frame: ", i)
 
         # Find lane lines
-        img, left_line, right_line = functions.findLaneLines(frame)
+        frame_with_overlay = functions.findLaneLines(frame)
 
         # Write original frame with the highlighted lines to output
-        #output.write(frame_with_overlay)
-        output.write(img)
+        output.write(frame_with_overlay)
 
         # Display resulting frame (for visualization)
-        #cv2.imshow('frame', frame_with_overlay)
-        cv2.imshow('frame', img)
+        cv2.imshow('frame', frame_with_overlay)
 
         # Press Q on keyboard to stop playing
         if cv2.waitKey(1) & 0xFF == ord('q'):
