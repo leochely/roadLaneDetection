@@ -100,15 +100,21 @@ def combineImages(img1, img2, roi):
     return combined_img
 
 def houghLinestoLaneLines(img, lines):
-    left_lines = []  # (slope, intercept)
-    left_weights = []  # (length,)
-    right_lines = []  # (slope, intercept)
-    right_weights = []  # (length,)
+
+    # Initialize vectors to hold needed information
+    left_lines = []         # (slope, intercept)
+    left_weights = []       # length
+    right_lines = []
+    right_weights = []
 
     width, _ = img.shape
+
+    # Iterate through all lines
     for line in lines:
+        # Extract points from this line
         for x1, y1, x2, y2 in line:
-            # Check for infinite demoninator (Verticle line)
+
+            # Check for infinite demoninator (Vertical line)
             if (x2 - x1) == 0:
                 continue
 
@@ -119,6 +125,7 @@ def houghLinestoLaneLines(img, lines):
             if math.fabs(slope) < 1:
                 continue
 
+            # Calculate intercept and length
             intercept = y1 - slope * x1
             length = np.sqrt((y2 - y1) ** 2 + (x2 - x1) ** 2)
 
