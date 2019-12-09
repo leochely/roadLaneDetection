@@ -15,7 +15,7 @@ import functions
 
 # Input and Output File Names
 input_video_file_name = 'Lane Detection Test Video 01.avi'
-output_video_file_name = 'output.avi'
+output_video_file_name = 'BurkeChely_CSCI437_FinalProject_output.avi'
 
 # Video input
 cap = cv2.VideoCapture(input_video_file_name)
