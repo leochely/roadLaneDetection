@@ -1,3 +1,14 @@
+'''
+main.py file for use in Final Project of CSCI437 - Fall 2019
+
+Authors: Curtis Burke, Leo Chely
+Assignment: Final Project
+Course: CSCI437
+Date: December 8, 2019
+
+'''
+
+# Import libraries
 import numpy as np
 import cv2
 import functions
@@ -21,7 +32,7 @@ frame_height = int(cap.get(4))
 fourcc = cv2.VideoWriter_fourcc('M', 'J', 'P', 'G')
 output = cv2.VideoWriter(output_video_file_name, fourcc, 30, (frame_width, frame_height))
 
-# Processing video
+# Process video
 while (True):
     # Read current frame
     ret, frame = cap.read()
