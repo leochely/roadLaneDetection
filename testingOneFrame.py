@@ -23,7 +23,7 @@ amount_of_frames = cap.get(cv2.CAP_PROP_FRAME_COUNT)
 # Frame counter
 count = 0
 
-# ---------------------------- RIGHT HERE -------------------------------------------------
+# ---------------------------- CHANGE THIS HERE -------------------------------------------------
 # Desired Frame
 desired_frame = 100
 #------------------------------------------------------------------------------------------
@@ -32,9 +32,11 @@ desired_frame = 100
 if desired_frame > amount_of_frames:
     desired_frame = amount_of_frames
 
+# For visualization
 overlayROI = False
 
 while (True):
+    # Frame counter
     count = count + 1
 
     ret, frame = cap.read()
@@ -51,9 +53,9 @@ while (True):
                 # Show region of interest
                 roi = functions.overlayROI(frame, roi_pts)
                 functions.ShowImage("RegionOfInterest", roi)
+                #cv2.imwrite('Output_Images/ROI.jpg', roi)
 
-            else: # Find Lanes
-                # Find lane lines
+            else:       # Find Lanes
                 img_with_overlay = functions.findLaneLines(frame)
 
                 # Display resulting image
